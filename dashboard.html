@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BSLA Dashboard</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+background:#f4f6f8;
+margin:0;
+}
+
+header{
+background:#0077ff;
+color:white;
+padding:20px;
+text-align:center;
+}
+
+.container{
+padding:30px;
+max-width:1000px;
+margin:auto;
+}
+
+.card-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+text-align:center;
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.05);
+}
+
+button{
+background:#0077ff;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056cc;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>BSLA App Dashboard</h1>
+<p>Structured Literacy Assessment Tool</p>
+</header>
+
+<div class="container">
+
+<h2>Teacher Tools</h2>
+
+<div class="card-grid">
+
+<div class="card">
+<h3>Student Assessments</h3>
+<p>Record and track BSLA results.</p>
+<button>Open</button>
+</div>
+
+<div class="card">
+<h3>Progress Tracking</h3>
+<p>View student literacy growth.</p>
+<button>Open</button>
+</div>
+
+<div class="card">
+<h3>Reports</h3>
+<p>Generate reports for parents and schools.</p>
+<button>Open</button>
+</div>
+
+<div class="card">
+<h3>Admin</h3>
+<p>Manage classes and students.</p>
+<button>Open</button>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
