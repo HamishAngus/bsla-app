@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BSLA App - Students</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f7fb; margin:0; }
+    header { background:#0077ff; color:#fff; padding:28px 20px; text-align:center; }
+    header h1 { margin:0; font-size:28px; }
+    header p { margin:8px 0 0; opacity:0.9; }
+
+    .wrap { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); padding:18px; margin-bottom:16px; }
+
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    label { font-size:12px; font-weight:700; display:block; margin-bottom:6px; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d7dbe7;
+      outline: none;
+      font-size: 14px;
+    }
+    .col { flex: 1; min-width: 220px; }
+
+    button {
+      background:#0077ff; color:#fff; border:none; border-radius:10px;
+      padding: 10px 14px; cursor:pointer; font-weight:700;
+    }
+    button:hover { filter: brightness(0.95); }
+
+    .btn-secondary { background:#111827; }
+    .btn-danger { background:#ef4444; }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { text-align:left; padding: 12px 10px; border-bottom: 1px solid #eef1f7; }
+    th { font-size:12px; text-transform: uppercase; letter-spacing: .04em; color:#5b6475; }
+    .muted { color:#5b6475; font-size: 13px; }
+
+    .top-actions { display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+    .pill { background:#eef4ff; color:#0b4fd6; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; }
+
+    .search {
+      max-width: 360px;
+      flex: 1;
+      min-width: 220px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Students</h1>
+    <p>Manage your class list (stored locally in your browser for now)</p>
+  </header>
+
+  <div class="wrap">
+
+    <div class="card">
+      <div class="top-actions">
+        <div class="row" style="margin:0; flex:1;">
+          <div class="col search">
+            <label for="search">Search</label>
+            <input id="search" placeholder="Type a name…" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span class="pill" id="countPill">0 students</span>
+          <button class="btn-secondary" onclick="goBack()">← Dashboard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Add Student</h2>
+      <p class="muted">This is your first real tool. Next we can add BSLA results per student.</p>
+
+      <div class="row">
+        <div class="col">
+          <label for="name">Student name</label>
+          <input id="name" placeholder="e.g., Riley Thompson" />
+        </div>
+
+        <div class="col">
+          <label for="year">Year level</label>
+          <select id="year">
+            <option value="Year 1">Year 1</option>
+            <option value="Year 2">Year 2</option>
+            <option value="Year 3">Year 3</option>
+            <option value="Year 4">Year 4</option>
+            <option value="Year 5" selected>Year 5</option>
+            <option value="Year 6">Year 6</option>
+          </select>
+        </div>
+
+        <div class="col" style="display:flex; align-items:flex-end;">
+          <button onclick="addStudent()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Class List</h2>
+      <div id="empty" class="muted">No students yet. Add one above.</div>
+
+      <div style="overflow:auto;">
+        <table id="table" style="display:none;">
+          <thead>
+            <tr>
+              <th style="width:55%;">Name</th>
+              <th style="width:25%;">Year</th>
+              <th style="width:20%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="exportJSON()">Export (.json)</button>
+        <button class="btn-danger" onclick="clearAll()">Clear all</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const STORAGE_KEY = "bsla_students_v1";
+
+    function loadStudents() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveStudents(students) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    }
+
+    function setCount(n) {
+      document.getElementById("countPill").textContent = `${n} student${n === 1 ? "" : "s"}`;
+    }
+
+    function render() {
+      const search = document.getElementById("search").value.trim().toLowerCase();
+      const students = loadStudents();
+
+      const filtered = students.filter(s => s.name.toLowerCase().includes(search));
+
+      const empty = document.getElementById("empty");
+      const table = document.getElementById("table");
+      const tbody = document.getElementById("tbody");
+
+      setCount(students.length);
+
+      tbody.innerHTML = "";
+
+      if (filtered.length === 0) {
+        table.style.display = "none";
+        empty.style.display = "block";
+        empty.textContent = students.length === 0 ? "No students yet. Add one above." : "No matches found.";
+        return;
+      }
+
+      empty.style.display = "none";
+      table.style.display = "table";
+
+      filtered.forEach((s) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(s.name)}</strong></td>
+          <td>${escapeHtml(s.year)}</td>
+          <td>
+            <button class="btn-danger" onclick="removeStudent('${s.id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addStudent() {
+      const nameEl = document.getElementById("name");
+      const yearEl = document.getElementById("year");
+
+      const name = nameEl.value.trim();
+      const year = yearEl.value;
+
+      if (!name) {
+        alert("Please enter a student name.");
+        nameEl.focus();
+        return;
+      }
+
+      const students = loadStudents();
+      students.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        name,
+        year,
+        createdAt: new Date().toISOString(),
+      });
+
+      saveStudents(students);
+
+      nameEl.value = "";
+      nameEl.focus();
+      render();
+    }
+
+    function removeStudent(id) {
+      const students = loadStudents().filter(s => s.id !== id);
+      saveStudents(students);
+      render();
+    }
+
+    function clearAll() {
+      if (!confirm("Clear ALL students?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    }
+
+    function exportJSON() {
+      const students = loadStudents();
+      const blob = new Blob([JSON.stringify(students, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bsla-students.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function goBack() {
+      // if your homepage is dashboard.html, this will take you back there
+      window.location.href = "dashboard.html";
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      }[m]));
+    }
+
+    document.getElementById("search").addEventListener("input", render);
+
+    render();
+  </script>
+</body>
+</html>
