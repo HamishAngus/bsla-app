@@ -41,7 +41,18 @@
 
     .top-actions { display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
     .pill { background:#eef4ff; color:#0b4fd6; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; }
+.stage-pill { color:#fff; }
+.stage-1, .stage-2 { background:#ef4444; }   /* red */
+.stage-3, .stage-4 { background:#f59e0b; }   /* orange */
+.stage-5, .stage-6 { background:#10b981; }   /* green */
+.stage-7, .stage-8 { background:#3b82f6; }   /* blue */
+.stage-unassessed { background:#6b7280; }    /* grey */
 
+.group-a { border-left:6px solid #ef4444; padding-left:10px; }
+.group-b { border-left:6px solid #f59e0b; padding-left:10px; }
+.group-c { border-left:6px solid #10b981; padding-left:10px; }
+.group-d { border-left:6px solid #3b82f6; padding-left:10px; }
+.group-u { border-left:6px solid #6b7280; padding-left:10px; }
     .search {
       max-width: 360px;
       flex: 1;
@@ -203,9 +214,11 @@
 tr.innerHTML = `
   <td>
     <strong>${escapeHtml(s.name)}</strong><br>
-    <span class="muted" style="font-size:12px;">
-      BSLA: ${s.bslaStage ? `Stage ${escapeHtml(String(s.bslaStage))}` : "Unassessed"}
-    </span>
+    
+<span class="pill stage-pill ${s.bslaStage ? `stage-${escapeHtml(String(s.bslaStage))}` : 'stage-unassessed'}" style="font-size:12px;">
+  ${s.bslaStage ? `Stage ${escapeHtml(String(s.bslaStage))}` : "Unassessed"}
+</span>
+
   </td>
 
   <td>${escapeHtml(s.year)}</td>
@@ -300,7 +313,100 @@ tr.innerHTML = `
     }
 
     document.getElementById("search").addEventListener("input", render);
+function setStage(id, value) {
+  const students = loadStudents();
+  const s = students.find(st => st.id === id);
+  if (!s) return;
 
+  s.bslaStage = value ? Number(value) : null;
+  saveStudents(students);
+  render();
+}
+
+function levelBand(stage) {
+  const n = Number(stage);
+  if (!stage || Number.isNaN(n)) return "Unassessed";
+  if (n <= 2) return "Band A (Stages 1–2)";
+  if (n <= 4) return "Band B (Stages 3–4)";
+  if (n <= 6) return "Band C (Stages 5–6)";
+  return "Band D (Stages 7–8)";
+}
+
+function teachingFocusForBand(band) {
+  const focuses = {
+    "Band A (Stages 1–2)": [
+      "Phonemic awareness: segmenting and blending",
+      "Letter–sound relationships",
+      "Early decoding with decodable texts"
+    ],
+    "Band B (Stages 3–4)": [
+      "Digraphs and vowel teams",
+      "Blending for automaticity",
+      "Supported repeated reading"
+    ],
+    "Band C (Stages 5–6)": [
+      "Fluency: phrasing and expression",
+      "Multisyllabic decoding",
+      "Vocabulary development"
+    ],
+    "Band D (Stages 7–8)": [
+      "Complex text fluency",
+      "Morphology: prefixes and suffixes",
+      "Comprehension strategies"
+    ],
+    "Unassessed": [
+      "Run a quick BSLA assessment",
+      "Check decoding accuracy",
+      "Identify next teaching focus"
+    ]
+  };
+
+  return focuses[band] || [];
+}
+
+function generateGroups() {
+
+  const students = loadStudents();
+  const groups = {};
+
+  students.forEach(s => {
+    const band = levelBand(s.bslaStage);
+
+    if (!groups[band]) groups[band] = [];
+
+    groups[band].push(s);
+  });
+
+  const container = document.getElementById("groupOutput");
+
+  let html = "";
+
+  Object.keys(groups).forEach(band => {
+
+    const studentsList = groups[band]
+      .map(s => `<li>${escapeHtml(s.name)} (${escapeHtml(s.year)})</li>`)
+      .join("");
+
+    const focus = teachingFocusForBand(band)
+      .map(f => `<li class="muted">${escapeHtml(f)}</li>`)
+      .join("");
+
+    html += `
+      <div style="margin-bottom:16px;">
+        <span class="pill">${escapeHtml(band)}</span>
+
+        <div class="muted" style="margin-top:8px;"><strong>Teaching Focus</strong></div>
+        <ul>${focus}</ul>
+
+        <div class="muted"><strong>Students</strong></div>
+        <ul>${studentsList}</ul>
+      </div>
+    `;
+  });
+
+  container.style.display = "block";
+  container.innerHTML = html;
+}
     render();
   </script>
 </body>
