@@ -122,6 +122,33 @@
         <button class="btn-secondary" onclick="exportJSON()">Export (.json)</button>
         <button class="btn-danger" onclick="clearAll()">Clear all</button>
       </div>
+      <hr style="margin:16px 0; border:none; border-top:1px solid #eef1f7;">
+
+<h2 style="margin-top:0;">Reading Groups</h2>
+<p class="muted">Auto-generate groups from each student’s latest BSLA stage and show a teaching focus.</p>
+
+<div class="row">
+  <div class="col">
+    <label for="defaultStage">Default stage (if no BSLA recorded yet)</label>
+    <select id="defaultStage">
+      <option value="Unassessed" selected>Unassessed</option>
+      <option value="1">Stage 1</option>
+      <option value="2">Stage 2</option>
+      <option value="3">Stage 3</option>
+      <option value="4">Stage 4</option>
+      <option value="5">Stage 5</option>
+      <option value="6">Stage 6</option>
+      <option value="7">Stage 7</option>
+      <option value="8">Stage 8</option>
+    </select>
+  </div>
+
+  <div class="col" style="display:flex; align-items:flex-end;">
+    <button onclick="generateGroups()">Generate reading groups</button>
+  </div>
+</div>
+
+<div id="groupOutput" class="card" style="display:none; margin-top:12px;"></div>
     </div>
 
   </div>
@@ -171,13 +198,32 @@
 
       filtered.forEach((s) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(s.name)}</strong></td>
-          <td>${escapeHtml(s.year)}</td>
-          <td>
-            <button class="btn-danger" onclick="removeStudent('${s.id}')">Delete</button>
-          </td>
-        `;
+       
+
+tr.innerHTML = `
+  <td>
+    <strong>${escapeHtml(s.name)}</strong><br>
+    <span class="muted" style="font-size:12px;">
+      BSLA: ${s.bslaStage ? `Stage ${escapeHtml(String(s.bslaStage))}` : "Unassessed"}
+    </span>
+  </td>
+
+  <td>${escapeHtml(s.year)}</td>
+
+  <td>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <select style="max-width:140px;" onchange="setStage('${s.id}', this.value)">
+        <option value="">Set stage…</option>
+        ${[1,2,3,4,5,6,7,8].map(n => `
+          <option value="${n}" ${String(s.bslaStage)===String(n) ? "selected" : ""}>Stage ${n}</option>
+        `).join("")}
+      </select>
+
+      <button class="btn-danger" onclick="removeStudent('${s.id}')">Delete</button>
+    </div>
+  </td>
+`;
+
         tbody.appendChild(tr);
       });
     }
@@ -196,12 +242,17 @@
       }
 
       const students = loadStudents();
-      students.push({
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        name,
-        year,
-        createdAt: new Date().toISOString(),
-      });
+     
+
+     students.push({
+  id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+  name,
+  year,
+  bslaStage: null,     // stage number 1–8, or null if not set
+  bslaNote: "",        // optional teacher note
+  updatedAt: null,
+  createdAt: new Date().toISOString(),
+}); 
 
       saveStudents(students);
 
